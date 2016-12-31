@@ -1,0 +1,11 @@
+subprojects {
+    group = 'org.gradle.sample'
+    version = '1.0'
+
+
+    repositories {
+        mavenCentral()
+    }
+
+}
+
