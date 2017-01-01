@@ -1,16 +1,20 @@
 package com.example.controllers;
 
 import com.example.commands.AddBulletin;
-import com.example.events.CmdCompleted;
 import com.example.messagebus.MessageBus;
 import com.example.viewmodels.bulletin.Bulletin;
 import com.example.viewmodels.bulletin.BulletinRepository;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.context.request.async.DeferredResult;
+import org.springframework.web.reactive.function.server.ServerResponse;
 
 @RestController
 @RequestMapping("/bulletins")
@@ -22,34 +26,16 @@ public class BulletinController {
     @Autowired
     protected MessageBus messageBus;
 
-    @RequestMapping(method= RequestMethod.GET)
-    public Iterable<Bulletin> getAll() {
-
+    @GetMapping
+    public Flux<Bulletin> getAll() {
         return repo.findAll();
     }
 
-    @RequestMapping(method=RequestMethod.POST)
-    public DeferredResult<Bulletin> create(@RequestBody AddBulletin newBulletin) {
-
-        final DeferredResult<Bulletin> deferredResult = new DeferredResult<>();
-
-        messageBus.send(newBulletin, cmdCompleted -> onCompleted(newBulletin.getId(), cmdCompleted, deferredResult));
-
-        return deferredResult;
+    @PostMapping
+    public Mono<Bulletin> create(@RequestBody Mono<AddBulletin> newBulletin) {
+        return messageBus.send(newBulletin)
+                .flatMap(e -> repo.findOne(e.getId()))
+                .next();
     }
 
-    private void onCompleted(
-            final String cmdId,
-            final CmdCompleted cmdCompleted,
-            final DeferredResult<Bulletin> deferredResult) {
-
-        if(cmdCompleted.getSucceeded()) {
-
-            deferredResult.setResult(repo.findOne(cmdId));
-        } else {
-
-            deferredResult.setErrorResult(new RuntimeException(cmdCompleted.getErrorMessage()));
-        }
-
-    }
 }

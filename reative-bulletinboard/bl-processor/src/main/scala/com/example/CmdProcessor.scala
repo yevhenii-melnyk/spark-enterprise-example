@@ -1,5 +1,7 @@
 package com.example
 
+import java.util.Date
+
 import com.example.commands.AddBulletin
 import com.example.events.CmdCompleted
 import com.example.handlers.AddBulletinHandler
@@ -70,8 +72,7 @@ abstract class CmdProcessor extends Serializable {
           case NonFatal(ex) => new CmdCompleted(cmdId, false, ex.getMessage)
 
         }.foreach { event =>
-          messageBus.send(event)
-
+          messageBus.send(event).subscribe();
         }
       }
     }

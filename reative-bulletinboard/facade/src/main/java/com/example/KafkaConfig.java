@@ -1,22 +1,27 @@
 package com.example;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
+import reactor.core.Disposable;
+import reactor.kafka.receiver.Receiver;
+import reactor.kafka.receiver.ReceiverOptions;
+import reactor.kafka.sender.Sender;
+import reactor.kafka.sender.SenderOptions;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.kafka.annotation.EnableKafka;
-import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
-import org.springframework.kafka.core.*;
-import org.springframework.kafka.support.converter.StringJsonMessageConverter;
+import org.springframework.context.annotation.PropertySource;
 
-import java.util.HashMap;
-import java.util.Map;
+import static java.util.Collections.singletonList;
 
 @Configuration
-@EnableKafka
+@PropertySource("classpath:/application.properties")
 public class KafkaConfig {
 
     @Value("${kafka.brokers}")
@@ -24,21 +29,6 @@ public class KafkaConfig {
 
     @Value("${kafka.groupId}")
     String groupId;
-    @Bean
-    ConcurrentKafkaListenerContainerFactory<String, String>
-    kafkaListenerContainerFactory() {
-        ConcurrentKafkaListenerContainerFactory<String, String> factory =
-                new ConcurrentKafkaListenerContainerFactory<>();
-        factory.setConsumerFactory(consumerFactory());
-        factory.setMessageConverter(new StringJsonMessageConverter());
-        return factory;
-    }
-
-    @Bean
-    public ConsumerFactory<String, String> consumerFactory() {
-
-        return new DefaultKafkaConsumerFactory<>(consumerConfigs());
-    }
 
     public Map<String, Object> consumerConfigs() {
         Map<String, Object> props = new HashMap<>();
@@ -46,14 +36,15 @@ public class KafkaConfig {
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
         props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, true);
+        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
         props.put(ConsumerConfig.GROUP_ID_CONFIG, groupId);
 
         return props;
     }
 
     @Bean
-    public ProducerFactory<String, String> producerFactory() {
-        return new DefaultKafkaProducerFactory<>(producerConfigs());
+    public ReceiverOptions<String, String> receiverOptions() {
+        return ReceiverOptions.create(consumerConfigs());
     }
 
     public Map<String, Object> producerConfigs() {
@@ -65,9 +56,10 @@ public class KafkaConfig {
         return props;
     }
 
-
     @Bean
-    KafkaTemplate<String, String> producer(ProducerFactory<String, String> producerFactory) {
-        return new KafkaTemplate<String, String>(producerFactory);
+    public Sender<String, String> kafkaSender() {
+        SenderOptions<String, String> options = SenderOptions.create(producerConfigs());
+        return Sender.create(options);
     }
+
 }

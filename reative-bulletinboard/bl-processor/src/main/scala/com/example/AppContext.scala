@@ -4,15 +4,15 @@ import java.util.Date
 
 import com.example.domain.BulletinMongoRepository
 import com.example.handlers.AddBulletinHandler
-import com.example.messagebus.MessageBus
 import com.example.infrastructure.Utils._
+import com.example.messagebus.MessageBus
 import com.mongodb.MongoClient
 import org.apache.kafka.clients.producer.ProducerConfig
 import org.apache.kafka.common.serialization.StringSerializer
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.SparkConf
 import org.apache.spark.streaming.StreamingContext
-import org.springframework.kafka.core.{DefaultKafkaProducerFactory, KafkaTemplate}
+import reactor.kafka.sender.{Sender, SenderOptions}
 
 import scala.concurrent.duration._
 
@@ -46,8 +46,8 @@ object AppContext extends ConfigTrait {
     props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, brokers)
     props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, classOf[StringSerializer])
     props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, classOf[StringSerializer])
-    val producerFactory = new DefaultKafkaProducerFactory[String, String](props)
-    new KafkaTemplate[String, String](producerFactory)
+    val options: SenderOptions[String, String] = SenderOptions.create(props)
+    Sender.create(options)
   }
 
   lazy val _messageBus = new MessageBus {

@@ -10,7 +10,7 @@ import java.util.Optional;
 @Value
 @Builder
 @AllArgsConstructor
-public class CmdCompleted extends AbstractEvent<CmdCompleted> {
+public class CmdCompleted implements AbstractEvent<CmdCompleted> {
 
     String id;
 

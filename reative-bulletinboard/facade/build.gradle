@@ -1,9 +1,11 @@
 buildscript {
 	ext {
-		springBootVersion = '1.4.0.RELEASE'
+		springBootVersion = '2.0.0.BUILD-SNAPSHOT'
 	}
 	repositories {
 		mavenCentral()
+		maven { url "https://repo.spring.io/snapshot" }
+		maven { url "https://repo.spring.io/milestone" }
 	}
 	dependencies {
 		classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
@@ -11,31 +13,40 @@ buildscript {
 }
 
 apply plugin: 'java'
-apply plugin: 'spring-boot'
+apply plugin: 'org.springframework.boot'
 
 jar {
 	baseName = 'facade'
 	version = '0.0.1-SNAPSHOT'
 }
 
+repositories {
+	mavenCentral()
+	maven { url "https://repo.spring.io/snapshot" }
+	maven { url "https://repo.spring.io/milestone" }
+}
 
 dependencies {
 
 	compile project(":common")
 
-    compile ('org.projectlombok:lombok:1.16.10')
+	compile('org.projectlombok:lombok:1.16.10')
 
-	compile('org.springframework.boot:spring-boot-starter-data-mongodb')
+	compile('org.springframework.data:spring-data-commons:2.0.0.BUILD-SNAPSHOT')
+	compile('org.springframework.data:spring-data-mongodb:2.0.0.BUILD-SNAPSHOT')
+	compile('org.mongodb:mongodb-driver-reactivestreams:1.2.0')
 
-	compile('org.springframework.boot:spring-boot-starter-web')
+	compile('org.springframework.boot.experimental:spring-boot-starter-web-reactive') {
+		exclude group: 'org.springframework.boot', module: 'spring-boot-starter-tomcat'
+	}
+	compile('io.projectreactor.ipc:reactor-netty')
 
-    compile('org.springframework:spring-messaging:4.2.6.RELEASE') { force = true }
 	// test dependencies
 	testCompile('org.springframework.boot:spring-boot-starter-test')
 }
 
 dependencyManagement {
 	imports {
-		mavenBom "org.springframework.cloud:spring-cloud-dependencies:Brixton.SR5"
+		mavenBom "org.springframework.boot.experimental:spring-boot-dependencies-web-reactive:0.1.0.BUILD-SNAPSHOT"
 	}
 }
